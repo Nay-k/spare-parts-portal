@@ -1,0 +1,57 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 20px 40px;
+}
+
+.auto-style1 {
+    color: orange;
+}
+.auto-style2 {
+    font-family: Arial, Helvetica, sans-serif;
+}
+.auto-style3 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: medium;
+}
+.auto-style4 {
+    font-size: xx-large;
+}
+a {
+    text-decoration: none;
+}
+
+.header {
+    border-bottom: solid 4px orange;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.logo {
+    width: auto;
+    height: 50px;
+}
+
+.icon {
+    display: inline-block;
+    width: auto;
+    height: 35px;
+}
+
+.navigation {
+    margin: auto 0;
+}
+
+.navigation a:first-of-type {
+    margin-right: 10px;
+}
+
+#svgwrapper {
+    width: 100%;
+    height: 84vh;
+    border: thick orange double;
+}
