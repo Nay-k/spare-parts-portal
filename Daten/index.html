@@ -1,38 +1,144 @@
-﻿<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>PAAL SVG</title>
-    <link rel="stylesheet" href="style/styles.css">
-    <script src='libs/svg-pan-zoom.js'></script>
+  <meta charset="utf-8" />
+  <title>PAAL SVG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style/styles.css">
+  <script src="libs/svg-pan-zoom.js"></script>
+  <style>
+    /* Make the stage take the screen and allow gestures to reach the SVG */
+    html, body { height: 100%; margin: 0; }
+    body { overflow: hidden; }
+    .page {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100%;
+    }
+    #svgwrapper {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      /* Let the embedded content handle gestures (prevents page scroll stealing) */
+      touch-action: none;
+      -ms-touch-action: none;
+    }
+    /* When we reach the real <svg>, also disable browser-default gestures */
+    .svg-stage, svg {
+      touch-action: none;
+      -ms-touch-action: none;
+    }
+    /* Make obvious tap targets; ensure shapes accept events */
+    .tap-target, .component, [data-part], [id^="part-"] {
+      cursor: pointer;
+      pointer-events: all;
+    }
+    /* Optional: invisible bigger hit area for thin strokes */
+    .tap-pad {
+      pointer-events: stroke;
+      stroke-width: 16;
+      stroke-opacity: 0;
+    }
+    /* (Optional) Keep your header styling predictable */
+    .header { z-index: 2; }
+  </style>
 </head>
 
 <body>
+  <div class="page">
     <div class="header auto-style2">
-        <div class="navigation">
-            <a href="index.html" class="icon">
-                <img alt="home" longdesc="back to start" src="img/home-button.png" class="icon">
-            </a>
-            <a href="javascript:history.back(-1)" class="icon">
-                <img alt="zurück" src="img/back-button.png" longdesc="go back 1 step" class="icon"/>
-            </a>
-        </div>
-        <div class="logo-header">
-            <a href="index.html" style="cursor: pointer">
-                <img alt="Logo" class="auto-style3 logo" src="img/paal-logo.png"/>
-            </a>
-            <span class="auto-style4">spare parts</span>
-        </div>
+      <div class="navigation">
+        <a href="index.html" class="icon">
+          <img alt="home" longdesc="back to start" src="img/home-button.png" class="icon">
+        </a>
+        <a href="javascript:history.back(-1)" class="icon">
+          <img alt="zurück" src="img/back-button.png" longdesc="go back 1 step" class="icon"/>
+        </a>
+      </div>
+      <div class="logo-header">
+        <a href="index.html" style="cursor: pointer">
+          <img alt="Logo" class="auto-style3 logo" src="img/paal-logo.png"/>
+        </a>
+        <span class="auto-style4">spare parts</span>
+      </div>
     </div>
 
-    <object id="svgwrapper" onload="init()" type="image/svg+xml" data="32197.svg">Your browser does not support SVG</object>
+    <!-- Keep using <object>, but we will target the *inner* <svg> after it loads -->
+    <object id="svgwrapper" class="svg-stage"
+            type="image/svg+xml"
+            data="32197.svg"
+            tabindex="-1"
+            onload="initSVG()">
+      Your browser does not support SVG
+    </object>
+  </div>
 
-    <script>
-        function init() {
-            svgPanZoom("#svgwrapper", {
-                zoomEnabled: true,
-                controlIconsEnabled: true
-            });
-        }
-    </script>
+  <script>
+    function initSVG() {
+      // 1) Get the inner SVG document from the <object>
+      const obj = document.getElementById('svgwrapper');
+      // contentDocument is same-origin because 32197.svg lives in the same repo
+      const svgDoc = obj.contentDocument;
+      if (!svgDoc) return;
+
+      // 2) Grab the actual <svg> element
+      const svgEl = svgDoc.documentElement; // <svg ...>
+      if (!svgEl || svgEl.tagName.toLowerCase() !== 'svg') return;
+
+      // Give it an id so we can style/target it if needed
+      svgEl.setAttribute('id', 'explodedSvg');
+      svgEl.style.touchAction = 'none';
+
+      // 3) Initialise pan/zoom on the REAL <svg>, not on the <object>
+      if (window.svgPanZoom) {
+        window.__pz = svgPanZoom(svgEl, {
+          zoomEnabled: true,
+          panEnabled: true,
+          controlIconsEnabled: true,
+          fit: true,
+          center: true,
+          dblClickZoomEnabled: false,
+          preventMouseEventsDefault: true
+        });
+      }
+
+      // 4) Make taps work on mobile: use pointer events (covers touch + mouse)
+      const tapTargets = svgEl.querySelectorAll('.tap-target, .component, [data-part], [id^="part-"]');
+
+      // Fallback: if your parts aren't tagged, treat any shape with an id as tappable
+      if (tapTargets.length === 0) {
+        svgEl.querySelectorAll('path, polygon, polyline, rect, circle, ellipse, g').forEach(node => {
+          if (node.id) node.classList.add('tap-target');
+        });
+      }
+
+      let tapBlock = false;
+      function onActivate(el, evt) {
+        if (tapBlock) return;
+        tapBlock = true; setTimeout(() => tapBlock = false, 250);
+        evt.preventDefault();
+
+        // Read a usable identifier for your logic
+        const partId = el.getAttribute('data-part') || el.id || 'unknown';
+        // TODO: replace alert with your existing click logic (open details, highlight, etc.)
+        alert('Part: ' + partId);
+
+        // If your existing code listens for 'click' on shapes, dispatch one:
+        try { el.dispatchEvent(new Event('click', { bubbles: true })); } catch (_) {}
+      }
+
+      // Attach listeners to each target
+      svgEl.querySelectorAll('.tap-target, .component, [data-part], [id^="part-"]').forEach(el => {
+        el.style.pointerEvents = 'all';
+        el.addEventListener('pointerup', e => onActivate(el, e), { passive: false });
+        // click fallback for old browsers
+        el.addEventListener('click', e => onActivate(el, e), { passive: false });
+      });
+
+      // 5) Stop iOS Safari from stealing gestures as page scroll while panning the SVG
+      svgEl.addEventListener('touchmove', e => { e.preventDefault(); }, { passive: false });
+    }
+  </script>
 </body>
 </html>
