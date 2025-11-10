@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>PAAL SVG</title>
+    <link rel="stylesheet" href="style/styles.css">
+    <script src='libs/svg-pan-zoom.js'></script>
+</head>
+
+<body>
+    <div class="header auto-style2">
+        <div class="navigation">
+            <a href="index.html" class="icon">
+                <img alt="home" longdesc="back to start" src="img/home-button.png" class="icon">
+            </a>
+            <a href="javascript:history.back(-1)" class="icon">
+                <img alt="zurück" src="img/back-button.png" longdesc="go back 1 step" class="icon"/>
+            </a>
+        </div>
+        <div class="logo-header">
+            <a href="index.html" style="cursor: pointer">
+                <img alt="Logo" class="auto-style3 logo" src="img/paal-logo.png"/>
+            </a>
+            <span class="auto-style4">spare parts</span>
+        </div>
+    </div>
+
+    <object id="svgwrapper" onload="init()" type="image/svg+xml" data="32197.svg">Your browser does not support SVG</object>
+
+    <script>
+        function init() {
+            svgPanZoom("#svgwrapper", {
+                zoomEnabled: true,
+                controlIconsEnabled: true
+            });
+        }
+    </script>
+</body>
+</html>
